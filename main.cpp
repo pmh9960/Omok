@@ -12,6 +12,7 @@ class Grid
 {
 private:
     int x_, y_;
+    int color_;
     int grid_[20][20];
 
 public:
@@ -24,23 +25,28 @@ public:
                 grid_[i][j] = 0;
     }
     void set_stone(int color);
-    int check_winner(int color);
+    int check_winner();
+    int eval();
+    int alpha_beta_search(int depth);
+    bool rule33();
+    bool rule6();
 };
 
 void Grid::set_stone(int color)
 {
+    color_ = color;
     gotoxy(0, 22);
-    cout << "Player " << color << " 위치를 입력하십시오" << endl;
+    cout << "Player " << color_ << " 위치를 입력하십시오" << endl;
     cin >> x_ >> y_;
     gotoxy(0, 23);
     cout << "                 " << endl;
     cout << "                 " << endl;
 
-    if (grid_[x_][y_] == 0 && x_ < 19 && y_ < 19) // rule 추가 해야함 33
+    if (grid_[x_][y_] == 0 && x_ < 19 && y_ < 19 && rule33()) // rule 추가 해야함 33
     {
-        grid_[x_][y_] = color;
+        grid_[x_][y_] = color_;
         gotoxy(x_ * 2, y_);
-        if (color == 1)
+        if (color_ == 1)
         {
             cout << "●";
         }
@@ -50,17 +56,17 @@ void Grid::set_stone(int color)
         }
     }
     else
-        set_stone(color);
+        set_stone(color_);
 }
 
-int Grid::check_winner(int color)
+int Grid::check_winner()
 {
     for (int i = 0; i < 19; i++)
     {
         for (int j = 0; j < 19; j++)
         {
             int cur = grid_[i][j];
-            if (cur != color)
+            if (cur != color_)
                 continue;
             else if (i < 15 && grid_[i + 1][j] == cur && grid_[i + 2][j] == cur && grid_[i + 3][j] == cur && grid_[i + 4][j] == cur)
             {
@@ -104,6 +110,66 @@ int Grid::check_winner(int color)
     return 0;
 }
 
+bool Grid::rule33()
+{
+    int count = 0, over = 0;
+    int mx[12][4] = {
+        {0, 0, 0, 0},
+        {0, 0, 0, 0},
+        {0, 0, 0, 0},
+        {-3, -2, -1, 1},
+        {-2, -1, 1, 2},
+        {-1, 1, 2, 3},
+        {-3, -2, -1, 1},
+        {-2, -1, 1, 2},
+        {-1, 1, 2, 3},
+        {-3, -2, -1, 1},
+        {-2, -1, 1, 2},
+        {-1, 1, 2, 3},
+    };
+    int my[12][4] = {
+        {-3, -2, -1, 1},
+        {-2, -1, 1, 2},
+        {-1, 1, 2, 3},
+        {0, 0, 0, 0},
+        {0, 0, 0, 0},
+        {0, 0, 0, 0},
+        {-3, -2, -1, 1},
+        {-2, -1, 1, 2},
+        {-1, 1, 2, 3},
+        {3, 2, 1, -1},
+        {2, 1, -1, -2},
+        {1, -1, -2, -3}};
+    // 가능한 33의 종류
+
+    for (int i = 0; i < 12; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            if (x_ + mx[i][j] < 0 || x_ + mx[i][j] > 18) // 밖으로 나가면 안됨
+                over = 1;
+        }
+        if (over == 0)
+        {
+            if (grid_[x_ + mx[i][0]][y_ + my[i][0]] == 0 && grid_[x_ + mx[i][3]][y_ + my[i][3]] == 0) // 양 끝은 비어있고
+            {
+                if (grid_[x_ + mx[i][1]][y_ + my[i][1]] == color_ && grid_[x_ + mx[i][2]][y_ + my[i][2]] == color_) // 중간은 같은 색의 돌 일 경우
+                {
+                    count++;
+                }
+            }
+        }
+    }
+    if (count < 2)
+        return true;
+    else
+        return false;
+}
+
+bool Grid::rule6()
+{
+}
+
 int main()
 {
     int color = 1;
@@ -115,7 +181,7 @@ int main()
     while (1)
     {
         Omok.set_stone(color);
-        win = Omok.check_winner(color);
+        win = Omok.check_winner();
         if (win != 0)
         {
             gotoxy(0, 22);
