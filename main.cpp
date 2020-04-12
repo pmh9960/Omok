@@ -60,16 +60,45 @@ int Grid::check_winner(int color)
         for (int j = 0; j < 19; j++)
         {
             int cur = grid_[i][j];
-            if (cur != color) // 6목 추가해야함.
+            if (cur != color)
                 continue;
             else if (i < 15 && grid_[i + 1][j] == cur && grid_[i + 2][j] == cur && grid_[i + 3][j] == cur && grid_[i + 4][j] == cur)
-                return cur;
+            {
+                if (i < 14 && grid_[i + 5][j] == cur)
+                    continue;
+                else if (i > 0 && grid_[i - 1][j] == cur)
+                    continue;
+                else
+                    return cur;
+            }
+
             else if (j < 15 && grid_[i][j + 1] == cur && grid_[i][j + 2] == cur && grid_[i][j + 3] == cur && grid_[i][j + 4] == cur)
-                return cur;
+            {
+                if (j < 14 && grid_[i][j + 5] == cur)
+                    continue;
+                else if (j > 0 && grid_[i][j - 1] == cur)
+                    continue;
+                else
+                    return cur;
+            }
             else if (i < 15 && j < 15 && grid_[i + 1][j + 1] == cur && grid_[i + 2][j + 2] == cur && grid_[i + 3][j + 3] == cur && grid_[i + 4][j + 4] == cur)
-                return cur;
+            {
+                if (i < 14 && j < 14 && grid_[i + 5][j + 5] == cur)
+                    continue;
+                else if (i > 0 && j > 0 && grid_[i - 1][j - 1] == cur)
+                    continue;
+                else
+                    return cur;
+            }
             else if (i > 3 && j < 15 && grid_[i - 1][j + 1] == cur && grid_[i - 2][j + 2] == cur && grid_[i - 3][j + 3] == cur && grid_[i - 4][j + 4] == cur)
-                return cur;
+            {
+                if (i > 4 && j < 14 && grid_[i - 5][j + 5] == cur)
+                    continue;
+                else if (i < 18 && j > 0 && grid_[i + 1][j - 1] == cur)
+                    continue;
+                else
+                    return cur;
+            }
         }
     }
     return 0;
