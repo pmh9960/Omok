@@ -1,7 +1,9 @@
 #include <iostream>
+#include <Windows.h>
 #include "gotoxy.cpp"
 using namespace std;
 
+#define INF 999'999'999 // int 범위에서 큰 수
 // □
 // ●
 // ○
@@ -13,36 +15,48 @@ class Grid
 private:
     int x_, y_;
     int color_;
-    int grid_[20][20];
+    int grid_[19][19];
 
 public:
     Grid()
     {
         x_ = 0;
         y_ = 0;
-        for (int i = 0; i < 20; i++)
-            for (int j = 0; j < 20; j++)
+        for (int i = 0; i < 19; i++)
+            for (int j = 0; j < 19; j++)
                 grid_[i][j] = 0;
     }
-    void set_stone(int color);
+    void set_stone(int color, bool isAI, int x, int y);
     int check_winner();
     int eval();
-    int alpha_beta_search(int depth);
+    int alpha_beta_search(int color, int depth);
+    int max_value(int a, int b, int depth);
+    int min_value(int a, int b, int depth);
+    bool result(int x, int y);
+    void remove(int x, int y);
     bool rule33();
-    bool rule6();
+    // bool rule6();
 };
 
-void Grid::set_stone(int color)
+void Grid::set_stone(int color, bool isAI, int x, int y)
 {
-    color_ = color;
-    gotoxy(0, 22);
-    cout << "Player " << color_ << " 위치를 입력하십시오" << endl;
-    cin >> x_ >> y_;
-    gotoxy(0, 23);
-    cout << "                 " << endl;
-    cout << "                 " << endl;
-
-    if (grid_[x_][y_] == 0 && x_ < 19 && y_ < 19 && rule33()) // rule 추가 해야함 33
+    if (!isAI)
+    {
+        color_ = color;
+        gotoxy(0, 22);
+        cout << "Player " << color_ << " 위치를 입력하십시오" << endl;
+        cin >> x_ >> y_;
+        gotoxy(0, 23);
+        cout << "                 " << endl;
+        cout << "                 " << endl;
+    }
+    else
+    {
+        color_ = color;
+        x_ = x;
+        y_ = y;
+    }
+    if (grid_[x_][y_] == 0 && x_ < 19 && y_ < 19 && rule33())
     {
         grid_[x_][y_] = color_;
         gotoxy(x_ * 2, y_);
@@ -56,7 +70,7 @@ void Grid::set_stone(int color)
         }
     }
     else
-        set_stone(color_);
+        set_stone(color_, isAI, x, y);
 }
 
 int Grid::check_winner()
@@ -166,21 +180,150 @@ bool Grid::rule33()
         return false;
 }
 
-bool Grid::rule6()
+// bool Grid::rule6()
+// {
+// }
+
+int Grid::alpha_beta_search(int color, int depth)
 {
+    color_ = color;
+    int v = -INF, a = -INF, b = INF;
+    int action_x = -1, action_y = -1;
+    int temp_value;
+    bool can_put;
+    for (int i = 0; i < 19; i++)
+    {
+        for (int j = 0; j < 19; j++)
+        {
+            can_put = result(i, j); // 놓을 수 있는 지 확인, 놓을 수 있다면 놓는다.
+            if (!can_put)
+                continue;
+            temp_value = min_value(a, b, depth - 1);
+            grid_[i][j] = 0; // 상상으로 놓은 돌을 치움
+            gotoxy(90, 0);
+            cout << temp_value;
+            if (v < temp_value)
+            {
+                v = temp_value;
+                action_x = i;
+                action_y = j;
+
+                gotoxy(70, 0);
+                cout << action_x;
+                gotoxy(70, 1);
+                cout << action_y;
+                // Sleep(1000);
+            }
+
+            gotoxy(50, 0);
+            cout << v;
+            // Sleep(1000);
+        }
+    }
+    return action_x * 19 + action_y;
+}
+int Grid::max_value(int a, int b, int depth)
+{
+    if (depth == 0)
+    {
+        return eval();
+    }
+    int temp_value, v = -INF;
+    bool can_put;
+    for (int i = 0; i < 19; i++)
+    {
+        for (int j = 0; j < 19; j++)
+        {
+            can_put = result(i, j); // 놓을 수 있는 지 확인, 놓을 수 있다면 놓는다.
+            if (!can_put)
+                continue;
+            v = max(v, min_value(a, b, depth - 1));
+            grid_[i][j] = 0; // 상상으로 놓은 돌을 치움
+            if (v >= b)
+                return v;
+            a = max(a, v);
+
+            // gotoxy(50, 0);
+            // cout << v;
+            // gotoxy(50, 1);
+            // cout << a;
+            // gotoxy(50, 2);
+            // cout << b;
+            // Sleep(1000);
+        }
+    }
+    return v;
+}
+int Grid::min_value(int a, int b, int depth)
+{
+    if (depth == 0)
+    {
+        return eval();
+    }
+    int temp_value, v = INF;
+    bool can_put;
+    for (int i = 0; i < 19; i++)
+    {
+        for (int j = 0; j < 19; j++)
+        {
+            can_put = result(i, j); // 놓을 수 있는 지 확인, 놓을 수 있다면 놓는다.
+            if (!can_put)
+                continue;
+            v = min(v, max_value(a, b, depth - 1));
+            grid_[i][j] = 0; // 상상으로 놓은 돌을 치움
+            if (v <= a)
+                return v;
+            b = min(b, v);
+
+            // gotoxy(50, 0);
+            // cout << v;
+            // gotoxy(50, 1);
+            // cout << a;
+            // gotoxy(50, 2);
+            // cout << b;
+            // Sleep(1000);
+        }
+    }
+    return v;
+}
+bool Grid::result(int x, int y)
+{
+    if (grid_[x][y] == 0 && rule33())
+    {
+        grid_[x][y] = color_;
+        color_ = 3 - color_;
+        return true;
+    }
+    return false;
+}
+
+int Grid::eval()
+{
+    return 1;
 }
 
 int main()
 {
-    int color = 1;
-    int win = 0;
+    int color = 1, win = 0, AI = 2;
+    int action, action_x, action_y;
     Grid Omok;
 
     init_grid();
 
     while (1)
     {
-        Omok.set_stone(color);
+        if (color == AI)
+        {
+            action = Omok.alpha_beta_search(color, 3);
+            action_x = action / 19;
+            action_y = action % 19;
+            Omok.set_stone(color, true, action_x, action_y);
+        }
+        else
+        {
+            Omok.set_stone(color, false, 0, 0);
+        }
+
         win = Omok.check_winner();
         if (win != 0)
         {
